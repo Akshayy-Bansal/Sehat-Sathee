@@ -1,0 +1,1170 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>सेहत Sathee - Combined</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&amp;display=swap" rel="stylesheet">
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+
+  <!-- Tesseract for OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+  <!-- PDF.js to render PDFs to canvas (first page) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #E3F2FD 0%, #E8F5E9 35%, #F3E5F5 70%, #E1F5FE 100%);
+      min-height: 100%;
+      overflow-x: hidden;
+    }
+
+    * { box-sizing: border-box; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; min-height: 100%; }
+
+    /* Navigation */
+    .nav {
+      background: white; border-radius: 20px; padding: 20px 32px; margin-bottom: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08); display:flex; justify-content:space-between; align-items:center;
+      flex-wrap:wrap; gap:16px;
+    }
+    .logo { font-size:28px; font-weight:700; background: linear-gradient(135deg,#3D8DFF 0%, #7DD87D 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .tagline { font-size:13px; color:#2C2C2C; margin-top:4px; opacity:0.7; }
+    .nav-links { display:flex; gap:12px; flex-wrap:wrap; }
+    .nav-btn { padding:12px 24px; border:none; border-radius:20px; background:#F8FBF9; color:#3D8DFF; font-weight:600; cursor:pointer; transition:all .3s; font-size:14px; }
+    .nav-btn:hover { background:#3D8DFF; color:white; transform:translateY(-2px); box-shadow:0 4px 12px rgba(61,141,255,0.3); }
+    .nav-btn.active { background:#3D8DFF; color:white; }
+
+    /* Pages */
+    .page { display:none; }
+    .page.active { display:block; }
+
+    /* Home Page */
+    .home-content { display:flex; flex-direction:column; align-items:center; gap:32px; }
+
+    .disc-container { position:relative; width:550px; height:550px; max-width:90vw; max-height:90vw; }
+    .circular-disc {
+      width:100%; height:100%; position:relative; border-radius:50%; background:white;
+      box-shadow: 0 0 60px rgba(61,141,255,0.3), 0 8px 32px rgba(0,0,0,0.12);
+      transition: transform .8s cubic-bezier(.4,0,.2,1);
+    }
+
+    .compartment { position:absolute; width:50%; height:50%; transform-origin:100% 100%; cursor:pointer; transition:all .3s; overflow:hidden; }
+    .compartment::after {
+      content:''; position:absolute; width:200%; height:200%; border-radius:50%;
+      border:4px solid rgba(44,44,44,0.18); clip-path: polygon(100% 0,100% 100%,0 100%);
+      pointer-events:none; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.6);
+    }
+    .compartment-content { position:absolute; top:30%; left:30%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; z-index:10; display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .compartment-number { font-size:28px; font-weight:800; color:white; margin-bottom:8px; background:#3D8DFF; width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 15px rgba(61,141,255,0.4); }
+    .pill-emoji { font-size:36px; display:none; }
+    .compartment.filled .pill-emoji { display:block; }
+    .medicine-name { font-size:12px; font-weight:700; color:#3D8DFF; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:rgba(255,255,255,0.9); padding:4px 8px; border-radius:12px; }
+    /* status-icons kept but hidden so no small emojis appear */
+    .status-icons { position:absolute; top:10px; right:10px; display:none; gap:6px; z-index:120; pointer-events:none; }
+    .status-dot { width:22px; height:22px; border-radius:50%; background:white; display:flex; align-items:center; justify-content:center; font-size:12px; box-shadow:0 2px 6px rgba(0,0,0,0.12); }
+
+    .center-circle {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:140px; height:140px;
+      background: linear-gradient(135deg,#3D8DFF 0%, #7DD87D 100%); border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; font-weight:700;
+      box-shadow:0 0 40px rgba(61,141,255,0.6), 0 6px 24px rgba(61,141,255,0.4); z-index:100; animation:pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{ transform:translate(-50%,-50%) scale(1); } 50%{ transform:translate(-50%,-50%) scale(1.04);} }
+    .center-text { font-size:16px; margin-bottom:8px; }
+    .center-logo { font-size:40px; }
+
+    /* Reminder Section */
+    .reminder-section { background:white; border-radius:20px; padding:28px; width:100%; max-width:650px; box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+    .reminder-title { font-size:20px; font-weight:700; color:#2C2C2C; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+    .next-medicine { background:linear-gradient(135deg,#E8F4FF 0%, #E8F9E8 100%); padding:20px; border-radius:20px; margin-bottom:20px; }
+    .next-medicine-text { font-size:16px; color:#2C2C2C; font-weight:600; }
+    .time-text { color:#3D8DFF; font-weight:700; }
+    .progress-bar { width:100%; height:10px; background: rgba(61,141,255,0.15); border-radius:20px; overflow:hidden; margin-top:14px; }
+    .progress-fill { height:100%; background: linear-gradient(90deg,#3D8DFF 0%, #7DD87D 100%); border-radius:20px; transition: width .3s; }
+
+    .notification-preview { background:#FFF9E6; padding:20px; border-radius:20px; border-left:5px solid #7DD87D; }
+    .notification-text { font-size:15px; color:#2C2C2C; font-weight:600; }
+
+    /* Upload / OCR area - condensed styles (kept from originals) */
+    .upload-content { max-width:1100px; margin:0 auto; }
+    .upload-header { text-align:center; margin-bottom:24px; }
+    .upload-title { font-size:36px; font-weight:700; color:#2C2C2C; margin-bottom:12px; }
+    .upload-subtitle { font-size:17px; color:#2C2C2C; opacity:0.8; }
+
+    .upload-box { background:white; border:3px dashed #3D8DFF; border-radius:20px; padding:28px; text-align:center; cursor:pointer; transition:all .3s; margin-bottom:18px; }
+    .upload-box:hover { border-color:#7DD87D; background:#F8FBF9; transform:translateY(-4px); box-shadow:0 8px 24px rgba(61,141,255,0.15); }
+    .upload-icon { font-size:48px; margin-bottom:12px; }
+    .upload-text { font-size:18px; color:#2C2C2C; font-weight:600; margin-bottom:8px; }
+    .upload-subtext { font-size:14px; color:#2C2C2C; opacity:0.6; }
+    .file-input { display:none; }
+
+    .analysis-progress { display:none; background:white; border-radius:20px; padding:20px; text-align:center; margin-bottom:20px; box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+    .analysis-progress.active { display:block; }
+    .spinner { width:48px; height:48px; border:5px solid #E8F4FF; border-top-color:#3D8DFF; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 12px; }
+    @keyframes spin { to{ transform:rotate(360deg); } }
+    .analysis-text { font-size:15px; color:#2C2C2C; font-weight:600; }
+
+    .ocr-section { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px; }
+    .ocr-preview { background:white; border-radius:12px; padding:12px; box-shadow:0 4px 12px rgba(0,0,0,0.06); min-height:220px; display:flex; flex-direction:column; gap:12px; align-items:center; justify-content:center; }
+    .ocr-preview img, .ocr-preview canvas { max-width:100%; max-height:360px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+    .ocr-textarea { width:100%; min-height:220px; border-radius:12px; border:2px solid #E8F4FF; padding:12px; font-family:'Poppins', sans-serif; resize:vertical; background:white; }
+
+    .parsed-medicines { background:white; border-radius:12px; padding:12px; box-shadow:0 4px 12px rgba(0,0,0,0.06); }
+    .parsed-table { width:100%; border-collapse:collapse; margin-top:6px; }
+    .parsed-table th, .parsed-table td { padding:8px; border-bottom:1px solid #f1f6fb; text-align:left; font-size:14px; }
+
+    .suggestions { background:white; border:2px solid #E8F4FF; border-radius:20px; margin-top:6px; max-height:220px; overflow-y:auto; display:none; box-shadow:0 4px 16px rgba(0,0,0,0.1); }
+    .suggestions.active { display:block; }
+    .suggestion-item { padding:14px 18px; cursor:pointer; transition:background .3s; font-size:14px; color:#2C2C2C; }
+    .suggestion-item:hover { background:#E8F4FF; }
+
+    .btn { padding:12px 18px; border-radius:12px; border:none; cursor:pointer; font-weight:600; font-family:'Poppins', sans-serif; }
+    .btn-primary { background:#4CAF50; color:white; }
+    .btn-secondary { background:#FF4B4B; color:white; }
+    .btn-danger { background:#FF6B6B; color:white; }
+
+    .detected-medicines { display:none; background:white; border-radius:20px; padding:32px; margin-bottom:28px; box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+    .detected-medicines.active { display:block; }
+
+    .medicine-table { width:100%; border-collapse:collapse; }
+    .medicine-table th { background:#E8F4FF; padding:14px; text-align:left; font-weight:600; color:#2C2C2C; font-size:15px; border-radius:12px; }
+    .medicine-table td { padding:14px; border-bottom:1px solid #E8F4FF; font-size:15px; color:#2C2C2C; }
+    .status-badge { background:#7DD87D; color:white; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; }
+
+    .confirm-btn { width:100%; padding:18px; background:#4CAF50; color:white; border:none; border-radius:20px; font-size:18px; font-weight:700; cursor:pointer; transition:all .3s; font-family:'Poppins', sans-serif; margin-top:24px; }
+
+    .empty-state { text-align:center; padding:60px 20px; color:#2C2C2C; opacity:0.5; }
+    .empty-icon { font-size:72px; margin-bottom:16px; }
+    .empty-text { font-size:18px; font-weight:600; }
+
+    .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+    .modal.active { display:flex; }
+    .modal-content { background:white; border-radius:20px; padding:36px; max-width:520px; width:100%; max-height:90%; overflow-y:auto; box-shadow:0 12px 48px rgba(0,0,0,0.2); }
+    .modal-header { font-size:26px; font-weight:700; color:#2C2C2C; margin-bottom:28px; text-align:center; }
+    .compartment-badge { display:inline-block; background: linear-gradient(135deg,#3D8DFF 0%, #7DD87D 100%); color:white; padding:6px 16px; border-radius:20px; font-size:16px; font-weight:700; margin-left:8px; }
+    .form-group { margin-bottom:24px; }
+    .form-label { display:block; font-size:15px; font-weight:600; color:#2C2C2C; margin-bottom:10px; }
+    .form-input, .form-select { width:100%; padding:14px 18px; border:2px solid #E8F4FF; border-radius:20px; font-size:15px; transition:all .3s; font-family:'Poppins', sans-serif; color:#2C2C2C; }
+    .form-input:focus, .form-select:focus { outline:none; border-color:#3D8DFF; box-shadow:0 0 0 4px rgba(61,141,255,0.1); }
+
+    .loading-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:none; align-items:center; justify-content:center; z-index:9999; }
+    .loading-overlay.active { display:flex; }
+    .loading-spinner { width:60px; height:60px; border:5px solid #E8F4FF; border-top-color:#3D8DFF; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 16px; }
+    .loading-text { font-size:16px; color:#2C2C2C; font-weight:600; }
+    @media (max-width: 1024px) {
+      .ocr-section { grid-template-columns:1fr; }
+      .disc-container { width:380px; height:380px; }
+      .center-circle { width:100px; height:100px; }
+      .center-text { font-size:12px; }
+      .center-logo { font-size:32px; }
+      .compartment-number { font-size:16px; }
+      .pill-emoji { font-size:24px; }
+      .upload-title { font-size:28px; }
+      .modal-content { padding:28px; }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <div class="loading-overlay" id="loadingOverlay">
+   <div class="loading-content">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Saving...</div>
+   </div>
+  </div>
+
+  <div class="container"><!-- Navigation -->
+   <nav class="nav">
+    <div>
+     <div class="logo" id="appTitle">सेहत Sathee</div>
+     <div class="tagline" id="tagline">Your Smart Medicine Companion</div>
+    </div>
+    <div class="nav-links">
+      <button class="nav-btn active" onclick="showPage('home')">🏠 Home</button>
+      <button class="nav-btn" onclick="showPage('upload')">📄 Upload Prescription</button>
+    </div>
+   </nav>
+
+   <!-- Home Page -->
+   <main id="homePage" class="page active">
+    <div class="home-content">
+     <div class="disc-container">
+      <div class="circular-disc" id="circularDisc"></div>
+      <div class="center-circle">
+       <div class="center-text">सेहत</div>
+       <div class="center-logo">💊</div>
+      </div>
+     </div>
+
+     <div class="reminder-section">
+      <div class="reminder-title">⏰ Upcoming Reminders</div>
+      <div id="reminderContent">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-text">No medicines scheduled yet</div>
+        </div>
+      </div>
+     </div>
+    </div>
+   </main>
+
+   <!-- Upload Page -->
+   <div id="uploadPage" class="page">
+    <div class="upload-content">
+     <header class="upload-header">
+      <h1 class="upload-title" id="uploadTitle">Upload Your Doctor's Prescription</h1>
+      <p class="upload-subtitle" id="uploadSubtitle">AI will read and auto-fill your medicine schedule (names, doses, AM/PM-aware times)</p>
+     </header>
+
+     <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">☁️</div>
+      <div class="upload-text">Drag &amp; Drop or Browse File</div>
+      <div class="upload-subtext">(JPG, PNG, PDF)</div>
+     </div>
+     <input type="file" id="fileInput" class="file-input" accept="image/*,.pdf" onchange="handleFileUpload(event)">
+
+     <div class="analysis-progress" id="analysisProgress">
+      <div class="spinner"></div>
+      <div class="analysis-text" id="analysisText">Preparing OCR...</div>
+     </div>
+
+     <!-- OCR Preview + Parsed Results -->
+     <div class="ocr-section" id="ocrSection" style="display:none;">
+      <div class="ocr-preview">
+       <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+         <div style="font-weight:700;">Preview</div>
+         <div>
+           <button class="btn btn-primary" onclick="runOCRFromPreview()" title="Re-run OCR">🔁 Re-run OCR</button>
+           <button class="btn btn-secondary" onclick="clearOCR()" title="Clear OCR">🗑 Clear</button>
+         </div>
+       </div>
+       <div id="imageContainer" style="width:100%; display:flex; justify-content:center; align-items:center; padding:8px;"></div>
+       <div style="font-size:12px; color:#666; width:100%; text-align:center;">OCR will attempt to extract medicine names, doses and AM/PM-aware times. Edit recognized text to improve results.</div>
+      </div>
+
+      <div>
+       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+         <div style="font-weight:700;">Recognized Text</div>
+         <div style="font-size:13px; color:#666;">Edit to improve parsing</div>
+       </div>
+       <textarea id="ocrText" class="ocr-textarea" placeholder="OCR text will appear here..."></textarea>
+
+       <div style="display:flex; gap:8px; margin-top:8px;">
+         <button class="btn btn-primary" onclick="autoParseFromOCR()">✨ Auto-Parse Medicines</button>
+         <button class="btn btn-secondary" onclick="copyOCRText()">Copy Text</button>
+       </div>
+
+       <div class="parsed-medicines" id="parsedMedicines" style="margin-top:12px; display:none;">
+         <div style="font-weight:700; margin-bottom:8px;">Parsed Medicines</div>
+         <table class="parsed-table" id="parsedTable">
+           <thead>
+             <tr>
+               <th style="width: 30%;">Medicine</th>
+               <th style="width: 12%;">Dose</th>
+               <th style="width: 18%;">Time</th>
+               <th style="width: 24%;">Instructions</th>
+               <th style="width: 10%;">Compartment</th>
+               <th style="width: 6%;">Remove</th>
+             </tr>
+           </thead>
+           <tbody id="parsedBody"></tbody>
+         </table>
+
+         <div class="confirm-sync" style="margin-top:12px;">
+           <button class="btn btn-primary" onclick="syncParsedToDispenser()">✅ Sync with Dispenser</button>
+           <button class="btn btn-danger" onclick="cancelParsed()">Cancel</button>
+         </div>
+       </div>
+      </div>
+     </div>
+
+     <div class="detected-medicines" id="detectedMedicines">
+      <h2 class="detected-title">Detected Medicines &amp; Schedule</h2>
+      <table class="medicine-table">
+       <thead>
+        <tr>
+         <th>Medicine</th><th>Dosage</th><th>Time</th><th>Status</th>
+        </tr>
+       </thead>
+       <tbody id="medicineTableBody"></tbody>
+      </table>
+      <button class="confirm-btn" onclick="confirmSync()">✅ Confirm &amp; Sync with Dispenser</button>
+     </div>
+    </div>
+   </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+   <div class="modal-content">
+    <h2 class="modal-header">Compartment <span class="compartment-badge" id="modalCompartmentNumber"></span></h2>
+    <form id="medicineForm" onsubmit="saveMedicine(event)">
+     <div class="form-group">
+      <label for="medicineName" class="form-label">💊 Medicine Name</label>
+      <input type="text" id="medicineName" class="form-input" placeholder="Enter medicine name" autocomplete="off" oninput="showSuggestions(this.value)" required>
+      <div class="suggestions" id="suggestions"></div>
+     </div>
+     <div class="form-group">
+      <label for="preset" class="form-label">📋 Preset Category</label>
+      <select id="preset" class="form-select">
+        <option value="Common">Common</option>
+        <option value="Diabetes">Diabetes</option>
+        <option value="Fever">Fever</option>
+        <option value="Supplement">Supplement</option>
+        <option value="Heart">Heart</option>
+        <option value="Other">Other</option>
+      </select>
+     </div>
+     <div class="form-group">
+      <label for="pills" class="form-label">💊 Number of Pills</label>
+      <input type="number" id="pills" class="form-input" min="1" max="10" value="1" required>
+     </div>
+     <div class="form-group">
+      <label for="time" class="form-label">⏰ Time</label>
+      <input type="time" id="time" class="form-input" required>
+     </div>
+     <div class="modal-buttons" style="display:flex; gap:14px; margin-top:18px;">
+      <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button type="button" class="btn btn-danger" id="clearBtn" onclick="clearMedicine()" style="display:none;">🗑️ Clear</button>
+      <button type="submit" class="btn btn-primary">✅ Save</button>
+     </div>
+    </form>
+   </div>
+  </div>
+
+  <script>
+    /* ------------------------------
+       Combined app: robust SDK helpers + advanced OCR parsing + syncing + UI update
+       Small-status emojis removed (no small pill/clock/warning icons)
+       ------------------------------ */
+
+    // Default configuration
+    const defaultConfig = {
+      app_title: "सेहत Sathee",
+      tagline: "Your Smart Medicine Companion",
+      upload_title: "Upload Your Doctor's Prescription",
+      upload_subtitle: "AI will read and auto-fill your medicine schedule (names, doses, AM/PM-aware times)",
+      background_color: "#F8FBF9",
+      primary_color: "#3D8DFF",
+      accent_color: "#7DD87D",
+      text_color: "#2C2C2C",
+      surface_color: "#FFFFFF"
+    };
+
+    // Combined medicine dictionary + suggestions (expandable)
+    const medicineDictionary = [
+      'Paracetamol', 'Metformin', 'Insulin', 'Vitamin D', 'Aspirin', 'Ibuprofen',
+      'Amoxicillin', 'Omeprazole', 'Atorvastatin', 'Lisinopril', 'Azithromycin',
+      'Cetirizine', 'Pantoprazole', 'Salbutamol'
+    ];
+
+    const compartmentColors = [
+      'linear-gradient(135deg, #4DD0E1 0%, #26C6DA 100%)',
+      'linear-gradient(135deg, #FF8A80 0%, #FF5252 100%)',
+      'linear-gradient(135deg, #B388FF 0%, #7C4DFF 100%)',
+      'linear-gradient(135deg, #CDDC39 0%, #AFB42B 100%)',
+      'linear-gradient(135deg, #81D4FA 0%, #4FC3F7 100%)',
+      'linear-gradient(135deg, #FF80AB 0%, #FF4081 100%)'
+    ];
+
+    let currentCompartment = null;
+    let medicines = []; // local cache of saved medicines (from SDK)
+    let parsedMedicinesList = []; // results from OCR parsing
+    let detectedMedicinesData = []; // older detection flow if used
+    let lastPreviewElement = null;
+
+    /* ========== UI & compartments initialization ========== */
+    function initializeCompartments() {
+      const disc = document.getElementById('circularDisc');
+      disc.innerHTML = '';
+
+      // pie divider
+      for (let i=0;i<6;i++){
+        const divider = document.createElement('div');
+        divider.className = 'compartment-divider';
+        const angle = (360/6)*i;
+        divider.style.transform = `rotate(${angle}deg)`;
+        disc.appendChild(divider);
+      }
+
+      // compartments
+      for (let i=0;i<6;i++){
+        const compartment = document.createElement('div');
+        compartment.className = 'compartment';
+        compartment.dataset.compartment = (i+1);
+        const angle = (360/6)*i;
+        compartment.style.transform = `rotate(${angle}deg)`;
+        const content = document.createElement('div');
+        content.className = 'compartment-content';
+        content.style.transform = `rotate(${-angle}deg)`;
+        content.innerHTML = `
+          <div class="compartment-number">${i+1}</div>
+          <div class="pill-emoji" aria-hidden="true">💊</div>
+          <div class="medicine-name" aria-hidden="true"></div>
+          <div class="status-icons" aria-hidden="true"></div>
+        `;
+        const before = document.createElement('div');
+        before.style.cssText = `
+          position:absolute; width:200%; height:200%; background: ${compartmentColors[i]}; border-radius:50%;
+          clip-path: polygon(100% 0, 100% 100%, 0 100%); transition:all .3s;
+        `;
+        compartment.appendChild(before);
+        compartment.appendChild(content);
+        compartment.onclick = () => openModal(i+1);
+        disc.appendChild(compartment);
+      }
+
+      // initial render if medicines already present
+      updateCompartments();
+    }
+
+    function openModal(compartmentNum){
+      currentCompartment = compartmentNum;
+      document.getElementById('modalCompartmentNumber').textContent = compartmentNum;
+      document.getElementById('modal').classList.add('active');
+      document.getElementById('medicineForm').reset();
+
+      const existing = medicines.find(m => m.compartment === compartmentNum);
+      const clearBtn = document.getElementById('clearBtn');
+      if (existing) {
+        document.getElementById('medicineName').value = existing.medicine_name || '';
+        document.getElementById('pills').value = existing.pills || 1;
+        document.getElementById('time').value = existing.time || '';
+        document.getElementById('preset').value = existing.preset || 'Common';
+        clearBtn.style.display = 'block';
+      } else {
+        clearBtn.style.display = 'none';
+      }
+    }
+
+    function closeModal(){
+      document.getElementById('modal').classList.remove('active');
+      document.getElementById('suggestions').classList.remove('active');
+    }
+
+    function showSuggestions(value){
+      const suggestionsDiv = document.getElementById('suggestions');
+      if (!value) { suggestionsDiv.classList.remove('active'); return; }
+      const filtered = medicineDictionary.filter(m => m.toLowerCase().includes(value.toLowerCase()));
+      if (filtered.length>0) {
+        suggestionsDiv.innerHTML = filtered.map(m => `<div class="suggestion-item" onclick="selectSuggestion('${m.replace(/'/g,"\\'")}')">${m}</div>`).join('');
+        suggestionsDiv.classList.add('active');
+      } else suggestionsDiv.classList.remove('active');
+    }
+    function selectSuggestion(med){ document.getElementById('medicineName').value = med; document.getElementById('suggestions').classList.remove('active'); }
+
+    /* ========== Robust SDK helpers (create/update/delete) ========== */
+    async function sdkCreate(item) {
+      if (!window.dataSdk || typeof window.dataSdk.create !== 'function') {
+        console.warn('dataSdk.create not available, skipping remote save');
+        return { ok: true, data: item };
+      }
+      try {
+        const result = await window.dataSdk.create(item);
+        if (result && (result.isOk || result.ok)) return { ok:true, data: result.data || item };
+        console.error('dataSdk.create returned failure', result);
+        return { ok:false, error:result };
+      } catch (err) {
+        console.error('dataSdk.create exception', err);
+        return { ok:false, error:err };
+      }
+    }
+    async function sdkUpdate(item) {
+      if (!window.dataSdk || typeof window.dataSdk.update !== 'function') {
+        console.warn('dataSdk.update not available, skipping remote update');
+        return { ok:true, data:item };
+      }
+      try {
+        const result = await window.dataSdk.update(item);
+        if (result && (result.isOk || result.ok)) return { ok:true, data: result.data || item };
+        console.error('dataSdk.update returned failure', result);
+        return { ok:false, error:result };
+      } catch (err) {
+        console.error('dataSdk.update exception', err);
+        return { ok:false, error:err };
+      }
+    }
+    async function sdkDelete(item) {
+      if (!window.dataSdk || typeof window.dataSdk.delete !== 'function') {
+        console.warn('dataSdk.delete not available, skipping remote delete');
+        return { ok:true };
+      }
+      try {
+        const result = await window.dataSdk.delete(item);
+        if (result && (result.isOk || result.ok)) return { ok:true };
+        console.error('dataSdk.delete returned failure', result);
+        return { ok:false, error:result };
+      } catch (err) {
+        console.error('dataSdk.delete exception', err);
+        return { ok:false, error:err };
+      }
+    }
+
+    /* ========== Save / Update / Clear medicine ========== */
+    async function saveMedicine(event){
+      event.preventDefault();
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      loadingOverlay.classList.add('active');
+
+      const medicineName = document.getElementById('medicineName').value.trim();
+      const pills = parseInt(document.getElementById('pills').value) || 1;
+      const time = document.getElementById('time').value || '';
+      const preset = document.getElementById('preset').value || 'Common';
+
+      try {
+        const existing = medicines.find(m => m.compartment === currentCompartment);
+        if (existing) {
+          const payload = { ...existing, medicine_name: medicineName, pills, time, preset };
+          const res = await sdkUpdate(payload);
+          if (res.ok) {
+            const updated = res.data || payload;
+            medicines = medicines.map(m => m.compartment === updated.compartment ? updated : m);
+            updateCompartments();
+            showNotification('Medicine updated');
+          } else {
+            showNotification('Failed to update medicine. See console.');
+          }
+        } else {
+          if (medicines.length >= 999) { showNotification('Maximum limit reached.'); return; }
+          const newMed = { id: Date.now().toString(), compartment: currentCompartment, medicine_name: medicineName, pills, time, preset, color:`gradient-${currentCompartment}`, active:true };
+          const res = await sdkCreate(newMed);
+          if (res.ok) {
+            const created = res.data || newMed;
+            created.compartment = created.compartment || currentCompartment;
+            medicines.push(created);
+            updateCompartments();
+            showNotification('Medicine saved');
+          } else {
+            showNotification('Failed to save medicine. See console.');
+          }
+        }
+      } catch (err) {
+        console.error('saveMedicine error', err);
+        showNotification('Unexpected error saving medicine.');
+      } finally {
+        loadingOverlay.classList.remove('active');
+        closeModal();
+      }
+    }
+
+    async function clearMedicine(){
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      loadingOverlay.classList.add('active');
+      try {
+        const existing = medicines.find(m => m.compartment === currentCompartment);
+        if (!existing) { showNotification('No medicine in this compartment.'); return; }
+        const res = await sdkDelete(existing);
+        if (res.ok) {
+          medicines = medicines.filter(m => m.compartment !== currentCompartment);
+          updateCompartments();
+          showNotification('Medicine cleared successfully!');
+        } else {
+          showNotification('Failed to clear medicine. See console.');
+        }
+      } catch (err) {
+        console.error('clearMedicine', err);
+        showNotification('Error clearing medicine.');
+      } finally {
+        loadingOverlay.classList.remove('active');
+        closeModal();
+      }
+    }
+
+    /* ========== Update UI compartments and reminders ========== */
+    function updateCompartments(){
+      for (let i=1;i<=6;i++){
+        const compartment = document.querySelector(`[data-compartment="${i}"]`);
+        if (!compartment) continue;
+        const medicine = medicines.find(m => m.compartment === i);
+        const nameDiv = compartment.querySelector('.medicine-name');
+        const pillEmoji = compartment.querySelector('.pill-emoji');
+        const statusIcons = compartment.querySelector('.status-icons');
+
+        if (medicine) {
+          compartment.classList.add('filled');
+          const displayName = (medicine.medicine_name || '').split('(')[0].trim();
+          nameDiv.textContent = displayName || '';
+          pillEmoji.style.display = 'block';
+          // remove small status emojis completely (keep container hidden)
+          if (statusIcons) { statusIcons.innerHTML = ''; statusIcons.style.display = 'none'; }
+        } else {
+          compartment.classList.remove('filled');
+          nameDiv.textContent = '';
+          pillEmoji.style.display = 'none';
+          if (statusIcons) { statusIcons.innerHTML = ''; statusIcons.style.display = 'none'; }
+        }
+      }
+      updateReminders();
+    }
+
+    function updateReminders(){
+      const reminderContent = document.getElementById('reminderContent');
+      if (!medicines || medicines.length === 0) {
+        reminderContent.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-text">No medicines scheduled yet</div>
+          </div>
+        `;
+        return;
+      }
+      // sort by time (empty times go last)
+      const withTimes = medicines.filter(m => m.time).slice();
+      const without = medicines.filter(m => !m.time).slice();
+      withTimes.sort((a,b) => {
+        const tA = new Date(`2000-01-01 ${a.time || '00:00'}`);
+        const tB = new Date(`2000-01-01 ${b.time || '00:00'}`);
+        return tA - tB;
+      });
+      const sorted = withTimes.concat(without);
+      const next = sorted[0];
+
+      // calculate progress between previous and next (rough)
+      let progressPercent = 45;
+      reminderContent.innerHTML = `
+        <div class="next-medicine">
+          <div class="next-medicine-text">
+            Next: <strong>${next.medicine_name}</strong> — ${next.pills || 1} Pill${(next.pills||1) > 1 ? 's' : ''} at <span class="time-text">${formatTime(next.time)}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${progressPercent}%"></div>
+          </div>
+        </div>
+        <div class="notification-preview">
+          <div class="notification-text">⏰ It's time to take your medicine: ${next.medicine_name} (${next.pills || 1} pill${(next.pills||1)>1?'s':''})</div>
+        </div>
+      `;
+    }
+
+    function formatTime(time) {
+      if (!time) return '';
+      if (time.includes(':')) {
+        const [hours, minutes] = time.split(':');
+        const hour = parseInt(hours,10);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${minutes} ${ampm}`;
+      }
+      return time;
+    }
+
+    /* ========== OCR & Parsing logic (advanced) ========== */
+
+    function setAnalysisProgress(active, message='Analyzing...') {
+      const prog = document.getElementById('analysisProgress');
+      const text = document.getElementById('analysisText');
+      text.textContent = message;
+      if (active) prog.classList.add('active'); else prog.classList.remove('active');
+    }
+
+    function clearOCR(){
+      parsedMedicinesList = [];
+      document.getElementById('ocrText').value = '';
+      document.getElementById('ocrSection').style.display = 'none';
+      document.getElementById('imageContainer').innerHTML = '';
+      lastPreviewElement = null;
+      document.getElementById('parsedMedicines').style.display = 'none';
+    }
+
+    function copyOCRText(){
+      const text = document.getElementById('ocrText').value;
+      navigator.clipboard?.writeText(text).then(() => showNotification('OCR text copied to clipboard'));
+    }
+
+    async function handleFileUpload(event){
+      const file = event.target.files[0];
+      if (!file) return;
+      parsedMedicinesList = [];
+      document.getElementById('parsedMedicines').style.display = 'none';
+      document.getElementById('detectedMedicines').classList.remove('active');
+      document.getElementById('ocrSection').style.display = 'block';
+      const imageContainer = document.getElementById('imageContainer');
+      imageContainer.innerHTML = '';
+      setAnalysisProgress(true, 'Preparing OCR...');
+      try {
+        if (file.type === 'application/pdf') {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          const page = await pdf.getPage(1);
+          const viewport = page.getViewport({ scale: 1.5 });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const ctx = canvas.getContext('2d');
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          imageContainer.appendChild(canvas);
+          lastPreviewElement = canvas;
+          await runOCRCanvas(canvas);
+        } else {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.alt = 'Prescription Preview';
+            img.onload = async () => {
+              const maxDim = 2000;
+              if (img.naturalWidth > maxDim || img.naturalHeight > maxDim) {
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight);
+                canvas.width = Math.round(img.naturalWidth * scale);
+                canvas.height = Math.round(img.naturalHeight * scale);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                imageContainer.appendChild(canvas);
+                lastPreviewElement = canvas;
+                await runOCRCanvas(canvas);
+              } else {
+                imageContainer.appendChild(img);
+                lastPreviewElement = img;
+                await runOCRImage(img);
+              }
+            };
+          };
+          reader.readAsDataURL(file);
+        }
+      } catch (err) {
+        console.error('Upload/Render error', err);
+        showNotification('Failed to process file for OCR');
+      } finally {
+        setAnalysisProgress(false);
+      }
+    }
+
+    async function runOCRImage(imgEl) {
+      setAnalysisProgress(true, 'Running OCR (this may take a few seconds)...');
+      try {
+        const src = imgEl.src;
+        const result = await Tesseract.recognize(src, 'eng+hin', {
+          logger: m => { if (m.status) setAnalysisProgress(true, `${m.status} ${m.progress ? Math.round(m.progress*100)+'%' : ''}`); }
+        });
+        const text = result.data?.text || '';
+        document.getElementById('ocrText').value = text;
+        autoParseFromOCR();
+      } catch (err) {
+        console.error('OCR error', err);
+        showNotification('OCR failed. Try re-running or use a clearer image.');
+      } finally {
+        setAnalysisProgress(false);
+      }
+    }
+
+    async function runOCRCanvas(canvas) {
+      setAnalysisProgress(true, 'Running OCR (this may take a few seconds)...');
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        const result = await Tesseract.recognize(dataUrl, 'eng+hin', {
+          logger: m => { if (m.status) setAnalysisProgress(true, `${m.status} ${m.progress ? Math.round(m.progress*100)+'%' : ''}`); }
+        });
+        const text = result.data?.text || '';
+        document.getElementById('ocrText').value = text;
+        autoParseFromOCR();
+      } catch (err) {
+        console.error('OCR (canvas) error', err);
+        showNotification('OCR failed. Try re-running or use a clearer image.');
+      } finally {
+        setAnalysisProgress(false);
+      }
+    }
+
+    async function runOCRFromPreview() {
+      if (!lastPreviewElement) return showNotification('No preview to OCR');
+      if (lastPreviewElement.tagName === 'CANVAS') await runOCRCanvas(lastPreviewElement);
+      else if (lastPreviewElement.tagName === 'IMG') await runOCRImage(lastPreviewElement);
+      else showNotification('No preview available');
+    }
+
+    /* ========== Parsing heuristics (improved) ========== */
+
+    function normalizeTimeString(s) {
+      if (!s) return '';
+      s = s.toString().trim().toLowerCase();
+      // handle formats like "6pm", "6 pm", "06:30", "6.30 pm", "630pm"
+      const ampmMatch = s.match(/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)/i);
+      if (ampmMatch) {
+        let h = parseInt(ampmMatch[1],10);
+        let mm = ampmMatch[2] || '00';
+        const ampm = ampmMatch[3].toLowerCase();
+        if (ampm === 'pm' && h !== 12) h += 12;
+        if (ampm === 'am' && h === 12) h = 0;
+        return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+      }
+      const colonMatch = s.match(/(\d{1,2})[:.](\d{2})/);
+      if (colonMatch) {
+        let h = parseInt(colonMatch[1],10);
+        let mm = colonMatch[2];
+        if (h >=0 && h <24) return `${String(h).padStart(2,'0')}:${mm}`;
+      }
+      if (/\bmorning\b/i.test(s)) return '08:00';
+      if (/\bnoon\b/i.test(s)) return '12:00';
+      if (/\bafternoon\b/i.test(s)) return '15:00';
+      if (/\bevening\b/i.test(s)) return '18:00';
+      if (/\bnight\b/i.test(s) || /\bbedtime\b/i.test(s) || /\bbefore bed\b/i.test(s)) return '21:00';
+      return '';
+    }
+
+    function capitalizeWords(s) { return (s||'').replace(/\b\w/g,c=>c.toUpperCase()).trim(); }
+
+    // More advanced parsing: find lines with medicine name, dose, and time (supports AM/PM)
+    function parsePrescriptionText(text) {
+      const lines = text.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+      const meds = [];
+      const doseRegex = /(\d+(?:\.\d+)?\s?(?:mg|g|mcg|μg|ml|tab(?:s)?|caps?|iu|units|puff|drops|tablet|tablet[s]?))/i;
+      const timeRegex = /(\d{1,2}(?::|\.)?\d{0,2}\s*(?:am|pm)|\d{1,2}(?::|\.)\d{2}|morning|noon|afternoon|evening|night|bedtime|breakfast|lunch|dinner)/i;
+      const instrRegex = /\b(after food|before food|with food|as needed|prn|twice daily|once daily|daily|at night|before bed|after meals|take)\b/i;
+
+      for (const line of lines) {
+        if (line.length < 3) continue;
+        // attempt to detect medicine name by dictionary fuzzy match
+        const foundMed = medicineDictionary.find(m => fuzzyMatchTextForTerm(line, m));
+        const doseMatch = line.match(doseRegex);
+        const timeMatch = line.match(timeRegex);
+        const instrMatch = line.match(instrRegex);
+
+        // heuristic: consider line if it has a medicine name OR dose keyword OR typical medicine keywords
+        const looksLikeMed = !!foundMed || doseMatch || /tablet|tab|capsule|mg|ml|puff|drop/i.test(line);
+        if (!looksLikeMed) continue;
+
+        // try to extract med name: prefer dictionary match else first token sequence
+        let medName = foundMed || line.split(/[,;:-]/)[0].replace(/\b(take|tab|tabs|tablet|capsule|caps)\b/ig,'').trim();
+        medName = medName.replace(doseRegex,'').trim();
+        if (!medName || medName.length < 2) {
+          const tokens = line.split(/\s+/);
+          medName = tokens.slice(0, Math.min(tokens.length,3)).join(' ');
+        }
+        const dosage = doseMatch ? doseMatch[0].trim() : '';
+        const time = timeMatch ? normalizeTimeString(timeMatch[0]) : '';
+        const instructions = instrMatch ? instrMatch[0] : '';
+
+        meds.push({
+          medicine: capitalizeWords(medName),
+          dosage,
+          time,
+          instructions,
+          compartment: null
+        });
+      }
+
+      // fallback: if no meds detected, try dictionary presence in whole text
+      if (meds.length === 0) {
+        for (const med of medicineDictionary) {
+          if (fuzzyMatchTextForTerm(text, med)) {
+            meds.push({ medicine: med, dosage:'', time:'', instructions:'', compartment: null });
+          }
+        }
+      }
+
+      return meds;
+    }
+
+    // fuzzy matching helper similar to newst1 approach
+    function normalizeStringForMatch(s) {
+      return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    }
+    function fuzzyMatchTextForTerm(text, term) {
+      const t = normalizeStringForMatch(text);
+      const q = normalizeStringForMatch(term);
+      if (!q) return false;
+      if (t.includes(q)) return true;
+      const qTokens = q.split(/\s+/).filter(Boolean);
+      let matched = 0;
+      for (const tok of qTokens) if (t.includes(tok)) matched++;
+      return matched >= Math.ceil(qTokens.length/2);
+    }
+
+    /* ========== Parsed rendering & edit ========== */
+    function autoParseFromOCR(){
+      const raw = document.getElementById('ocrText').value || '';
+      if (!raw.trim()) return showNotification('No OCR text to parse');
+      const parsed = parsePrescriptionText(raw);
+      // assign compartments (random available) immediately but allow user to change
+      parsedMedicinesList = parsed.map(p => ({...p, compartment: findRandomAvailableCompartment()}));
+      renderParsedMedicines();
+      if (parsed.length === 0) showNotification('No medicines detected. Edit text or add manually.');
+    }
+
+    function renderParsedMedicines(){
+      const container = document.getElementById('parsedBody');
+      if (!parsedMedicinesList || parsedMedicinesList.length === 0) {
+        document.getElementById('parsedMedicines').style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+      document.getElementById('parsedMedicines').style.display = 'block';
+      container.innerHTML = parsedMedicinesList.map((p, idx) => `
+        <tr data-idx="${idx}">
+          <td><input type="text" value="${escapeHtml(p.medicine||'')}" onchange="updateParsedField(${idx}, 'medicine', this.value)"></td>
+          <td><input type="text" value="${escapeHtml(p.dosage||'')}" onchange="updateParsedField(${idx}, 'dosage', this.value)"></td>
+          <td><input type="text" value="${escapeHtml(p.time||'')}" onchange="updateParsedField(${idx}, 'time', this.value)"></td>
+          <td><input type="text" value="${escapeHtml(p.instructions||'')}" onchange="updateParsedField(${idx}, 'instructions', this.value)"></td>
+          <td>
+            <select onchange="updateParsedField(${idx}, 'compartment', this.value)">
+              ${[1,2,3,4,5,6].map(n => `<option value="${n}" ${p.compartment==n?'selected':''}>${n}</option>`).join('')}
+            </select>
+          </td>
+          <td><button class="btn btn-secondary" onclick="removeParsed(${idx})">Remove</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+    function updateParsedField(idx, field, value){
+      if (!parsedMedicinesList[idx]) return;
+      if (field === 'compartment') parsedMedicinesList[idx][field] = parseInt(value);
+      else if (field === 'time') parsedMedicinesList[idx][field] = normalizeTimeString(value) || value;
+      else parsedMedicinesList[idx][field] = value;
+    }
+    function removeParsed(idx){ parsedMedicinesList.splice(idx,1); renderParsedMedicines(); }
+
+    /* ========== Random / available compartment assignment ========== */
+    function findRandomAvailableCompartment() {
+      const occupied = new Set(medicines.map(m => m.compartment));
+      parsedMedicinesList.forEach(p => { if (p && p.compartment) occupied.add(p.compartment); });
+      const available = [];
+      for (let i=1;i<=6;i++) if (!occupied.has(i)) available.push(i);
+      if (available.length === 0) return Math.floor(Math.random()*6)+1;
+      return available[Math.floor(Math.random()*available.length)];
+    }
+
+    /* ========== Sync parsed to dispenser (uses sdkCreate/sdkUpdate) ========== */
+    async function syncParsedToDispenser(){
+      if (!parsedMedicinesList || parsedMedicinesList.length === 0) return showNotification('No medicines to sync');
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      loadingOverlay.classList.add('active');
+      try {
+        for (const p of parsedMedicinesList) {
+          if (medicines.length >= 999) { showNotification('Maximum limit reached. Some medicines were not added.'); break; }
+          const compartmentNum = p.compartment || findRandomAvailableCompartment();
+          const existing = medicines.find(m => m.compartment === compartmentNum);
+          const timeNormalized = normalizeTimeString(p.time) || (p.time && p.time.includes(':') ? p.time : '');
+          if (existing) {
+            const updatedPayload = { ...existing, medicine_name: p.medicine || existing.medicine_name, dosage: p.dosage||existing.dosage, time: timeNormalized || existing.time, instructions: p.instructions || existing.instructions || '' };
+            const res = await sdkUpdate(updatedPayload);
+            if (res.ok) {
+              const updated = res.data || updatedPayload;
+              medicines = medicines.map(m => m.compartment === updated.compartment ? updated : m);
+            } else {
+              console.error('Failed to update existing during sync', res);
+              showNotification('Some medicines failed to update. See console.');
+            }
+          } else {
+            const newMed = {
+              id: Date.now().toString() + Math.random(),
+              compartment: compartmentNum,
+              medicine_name: p.medicine || 'Unknown',
+              dosage: p.dosage || '',
+              pills: 1,
+              time: timeNormalized || '',
+              preset: 'Common',
+              color: `gradient-${compartmentNum}`,
+              active: true,
+              instructions: p.instructions || ''
+            };
+            const res = await sdkCreate(newMed);
+            if (res.ok) {
+              const created = res.data || newMed;
+              created.compartment = created.compartment || compartmentNum;
+              medicines.push(created);
+            } else {
+              console.error('Failed to create during sync', res);
+              showNotification('Some medicines failed to add. See console.');
+            }
+          }
+          // small throttle
+          await new Promise(r => setTimeout(r, 120));
+        }
+        parsedMedicinesList = [];
+        document.getElementById('parsedMedicines').style.display = 'none';
+        updateCompartments();
+        showNotification('Parsed medicines synced successfully!');
+        showPage('home');
+      } catch (err) {
+        console.error('syncParsedToDispenser error', err);
+        showNotification('Error syncing with dispenser. See console.');
+      } finally {
+        loadingOverlay.classList.remove('active');
+      }
+    }
+
+    /* ========== Legacy detected-confirm flow (kept, robust) ========== */
+    function displayDetectedMedicines(){
+      const tbody = document.getElementById('medicineTableBody');
+      tbody.innerHTML = detectedMedicinesData.map(med => `
+        <tr>
+          <td>${med.medicine}</td>
+          <td>${med.dosage}</td>
+          <td>${formatTime(med.time)}</td>
+          <td><span class="status-badge">✅ Added</span></td>
+        </tr>
+      `).join('');
+      document.getElementById('detectedMedicines').classList.add('active');
+    }
+
+    async function confirmSync(){
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      loadingOverlay.classList.add('active');
+      try {
+        for (const med of detectedMedicinesData) {
+          if (medicines.length >= 999) { showNotification('Maximum limit reached. Some medicines were not added.'); break; }
+          const existing = medicines.find(m => m.compartment === med.compartment);
+          if (existing) {
+            const payload = { ...existing, medicine_name: med.medicine, pills:1, time: med.time || existing.time };
+            const res = await sdkUpdate(payload);
+            if (res.ok) {
+              const updated = res.data || payload;
+              medicines = medicines.map(m => m.compartment === updated.compartment ? updated : m);
+            } else {
+              console.error('Update failed in confirmSync', res);
+            }
+          } else {
+            const newMed = { id: Date.now().toString()+Math.random(), compartment: med.compartment || findRandomAvailableCompartment(), medicine_name: med.medicine, pills:1, time: med.time || '', preset:'Common', color:`gradient-${med.compartment || findRandomAvailableCompartment()}`, active:true };
+            const res = await sdkCreate(newMed);
+            if (res.ok) { medicines.push(res.data || newMed); }
+            else console.error('Create failed in confirmSync', res);
+          }
+        }
+        updateCompartments();
+        showNotification('Medicines synced successfully!');
+        showPage('home');
+        document.getElementById('detectedMedicines').classList.remove('active');
+        document.getElementById('fileInput').value = '';
+      } finally {
+        loadingOverlay.classList.remove('active');
+      }
+    }
+
+    /* ========== Notifications ========== */
+    function showNotification(message){
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed; top:20px; right:20px;
+        background: linear-gradient(135deg,#3D8DFF 0%, #7DD87D 100%); color:white;
+        padding:18px 28px; border-radius:20px; box-shadow:0 6px 24px rgba(61,141,255,0.4); z-index:10000;
+        font-weight:600; font-family:'Poppins', sans-serif;
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(()=>notification.remove(), 3500);
+    }
+
+    /* ========== SDK data handler and element SDK config ========== */
+    const dataHandler = {
+      onDataChanged(data) {
+        // data may be array of medicines; accept null/undefined
+        medicines = Array.isArray(data) ? data : (data || []);
+        updateCompartments();
+      }
+    };
+
+    async function onConfigChange(config){
+      const appTitle = config.app_title || defaultConfig.app_title;
+      const tagline = config.tagline || defaultConfig.tagline;
+      const uploadTitle = config.upload_title || defaultConfig.upload_title;
+      const uploadSubtitle = config.upload_subtitle || defaultConfig.upload_subtitle;
+      const backgroundColor = config.background_color || defaultConfig.background_color;
+      const primaryColor = config.primary_color || defaultConfig.primary_color;
+      const accentColor = config.accent_color || defaultConfig.accent_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+
+      document.getElementById('appTitle').textContent = appTitle;
+      document.getElementById('tagline').textContent = tagline;
+      document.getElementById('uploadTitle').textContent = uploadTitle;
+      document.getElementById('uploadSubtitle').textContent = uploadSubtitle;
+      document.body.style.background = backgroundColor;
+
+      const existingStyle = document.getElementById('dynamicStyles');
+      if (existingStyle) existingStyle.remove();
+      const style = document.createElement('style'); style.id = 'dynamicStyles';
+      style.textContent = `
+        .nav, .reminder-section, .modal-content, .upload-box, .detected-medicines, .analysis-progress { background: ${surfaceColor} !important; }
+        .logo, .time-text, .nav-btn.active { color: ${primaryColor} !important; }
+        .nav-btn:hover { background: ${primaryColor} !important; color:white !important; }
+        .center-circle, .compartment-badge { background: linear-gradient(135deg, ${primaryColor} 0%, ${accentColor} 100%) !important; }
+        .progress-fill { background: linear-gradient(90deg, ${primaryColor} 0%, ${accentColor} 100%) !important; }
+        .tagline, .upload-subtitle, .reminder-title, .next-medicine-text, .modal-header, .upload-title, .detected-title, .form-label, .medicine-table th, .medicine-table td, .suggestion-item, .analysis-text { color: ${textColor} !important; }
+        .compartment-number { color: white !important; }
+        .upload-box { border-color: ${primaryColor} !important; }
+        .upload-box:hover { border-color: ${accentColor} !important; }
+        .form-input:focus, .form-select:focus { border-color: ${primaryColor} !important; box-shadow: 0 0 0 4px ${primaryColor}20 !important; }
+        .spinner, .loading-spinner { border-top-color: ${primaryColor} !important; }
+        .status-badge { background: ${accentColor} !important; }
+        .notification-preview { border-left-color: ${accentColor} !important; }
+      `;
+      document.head.appendChild(style);
+    }
+
+    /* ========== Page navigation ========== */
+    function showPage(page){
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      if (page === 'home') {
+        document.getElementById('homePage').classList.add('active');
+        document.querySelectorAll('.nav-btn')[0].classList.add('active');
+      } else {
+        document.getElementById('uploadPage').classList.add('active');
+        document.querySelectorAll('.nav-btn')[1].classList.add('active');
+      }
+    }
+
+    /* ========== Initialization ========== */
+    async function init(){
+      initializeCompartments();
+
+      // init data SDK if present
+      if (window.dataSdk && typeof window.dataSdk.init === 'function') {
+        try {
+          const initResult = await window.dataSdk.init(dataHandler);
+          if (!initResult || !(initResult.isOk || initResult.ok)) {
+            console.warn('dataSdk.init reported not-ok', initResult);
+          }
+          if (typeof window.dataSdk.list === 'function') {
+            try {
+              const listResult = await window.dataSdk.list();
+              if (listResult && (listResult.isOk || listResult.ok) && Array.isArray(listResult.data)) {
+                medicines = listResult.data;
+                updateCompartments();
+              }
+            } catch (err) { console.warn('dataSdk.list failed', err); }
+          }
+        } catch (err) { console.error('Error initializing dataSdk', err); }
+      } else {
+        console.warn('dataSdk not available; running local-only');
+      }
+
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities: (config) => ({
+            recolorables: [
+              { get: () => config.background_color || defaultConfig.background_color, set: (value) => { config.background_color = value; window.elementSdk.setConfig({ background_color: value }); } },
+              { get: () => config.surface_color || defaultConfig.surface_color, set: (value) => { config.surface_color = value; window.elementSdk.setConfig({ surface_color: value }); } },
+              { get: () => config.text_color || defaultConfig.text_color, set: (value) => { config.text_color = value; window.elementSdk.setConfig({ text_color: value }); } },
+              { get: () => config.primary_color || defaultConfig.primary_color, set: (value) => { config.primary_color = value; window.elementSdk.setConfig({ primary_color: value }); } },
+              { get: () => config.accent_color || defaultConfig.accent_color, set: (value) => { config.accent_color = value; window.elementSdk.setConfig({ accent_color: value }); } }
+            ],
+            borderables: [], fontEditable: undefined, fontSizeable: undefined
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ["app_title", config.app_title || defaultConfig.app_title],
+            ["tagline", config.tagline || defaultConfig.tagline],
+            ["upload_title", config.upload_title || defaultConfig.upload_title],
+            ["upload_subtitle", config.upload_subtitle || defaultConfig.upload_subtitle]
+          ])
+        });
+      }
+    }
+
+    init();
+  </script>
+
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a26d34d77aada6d',t:'MTc2Mzc5NzcxNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>
